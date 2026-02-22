@@ -118,28 +118,28 @@ async def main():
     script, ai_t, dev_t = generate_content()
     await create_audio(script)
 
-    # 텔레그램 전송
-    await bot.send_message(
-        chat_id=TELEGRAM_CHAT_ID,
-        text=f"📅 오늘의 브리핑: {ai_t} & {dev_t}\n\n{script[:200]}..."
-    )
+    # 1. 텔레그램 전송
+    await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=f"📅 오늘의 브리핑: {ai_t} & {dev_t}")
     with open("morning_brief.mp3", "rb") as audio:
-        await bot.send_audio(chat_id=TELEGRAM_CHAT_ID, audio=audio, title=f"{ai_t} 브리핑")
+        await bot.send_audio(chat_id=TELEGRAM_CHAT_ID, audio=audio)
 
-    # 노션 업데이트 (페이지 생성)
-    notion.pages.create(
-        parent={"page_id": NOTION_PAGE_ID},
-        properties={
-            "title": [{"text": {"content": f"{datetime.now().strftime('%m/%d')} 모닝 브리프"}}]
-        },
-        children=[
-            {
-                "object": "block",
-                "type": "paragraph",
-                "paragraph": {"rich_text": [{"text": {"content": script}}]}
-            }
-        ]
-    )
+    # 2. 노션 데이터베이스에 업로드
+    try:
+        notion.pages.create(
+            parent={"database_id": NOTION_PAGE_ID},
+            properties={
+                "Name": {"title": [{"text": {"content": f"☀️ Morning Brief - {datetime.now().strftime('%b %d')}"}}]},
+                "TL;DR": {"rich_text": [{"text": {"content": f"오늘의 AI: {ai_t} / 개발: {dev_t}"}}]}
+            },
+            children=[
+                {"object": "block", "type": "heading_2", "heading_2": {"rich_text": [{"text": {"content": "🎙️ 오늘의 팟캐스트 대본"}}]}},
+                {"object": "block", "type": "paragraph", "paragraph": {"rich_text": [{"text": {"content": script}}]}}
+            ]
+        )
+        print("✅ 노션 업로드 완료!")
+    except Exception as e:
+        print(f"❌ 노션 에러 발생: {e} (연결 추가를 확인하세요!)")
+
     print("✅ 모든 전송 완료!")
 
 
