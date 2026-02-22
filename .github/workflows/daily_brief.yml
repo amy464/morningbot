@@ -18,11 +18,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install edge-tts google-generativeai python-telegram-bot notion-client pydub
-          sudo apt-get install ffmpeg # 오디오 합치기용
+          pip install edge-tts google-generativeai python-telegram-bot notion-client pydub requests
+          sudo apt-get install -y ffmpeg
 
       - name: Run Briefing
         env:
           GEMINI_API: ${{ secrets.GEMINI_API }}
-          # 여기에 각종 API 키들을 등록
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_PAGE_ID: ${{ secrets.NOTION_PAGE_ID }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python main.py
