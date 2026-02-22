@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install edge-tts google-generativeai python-telegram-bot notion-client pydub requests
-          sudo apt-get install -y ffmpeg
+          sudo apt-get install -y ffmpeg --fix-missing
 
       - name: Run Briefing
         env:
