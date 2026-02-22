@@ -3,7 +3,7 @@ import asyncio
 import random
 import requests
 from datetime import datetime
-import google.generativeai as genai
+from google import genai
 import edge_tts
 from pydub import AudioSegment
 from telegram import Bot
@@ -16,7 +16,7 @@ NOTION_PAGE_ID = os.environ.get("NOTION_PAGE_ID")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-genai.configure(api_key=GEMINI_API_KEY)
+gemini_client = genai.Client(api_key=GEMINI_API_KEY)
 notion = Client(auth=NOTION_TOKEN)
 bot = Bot(token=TELEGRAM_TOKEN)
 
@@ -63,7 +63,6 @@ def generate_content():
     weather = get_weather()
     date_str = datetime.now().strftime("%Y년 %m월 %d일")
 
-    model = genai.GenerativeModel('gemini-1.5-flash')
     prompt = f"""
     오늘 날짜: {date_str}
     인천 날씨: {weather}
@@ -75,7 +74,10 @@ def generate_content():
     - 아주 친근하고 유머러스하게, 초등학생도 이해할 비유를 들어서 설명해줘.
     - 날씨에 맞는 옷차림 조언과 마지막에 브람스나 베토벤 같은 노동요 클래식 추천도 포함해줘.
     """
-    response = model.generate_content(prompt)
+    response = gemini_client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt
+    )
     return response.text, ai_term, dev_term
 
 
