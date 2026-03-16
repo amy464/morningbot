@@ -19,11 +19,11 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg
-          pip install google-genai edge-tts python-telegram-bot notion-client pydub requests
+          pip install openai edge-tts python-telegram-bot notion-client pydub requests
 
       - name: Run Briefing
         env:
-          GEMINI_API: ${{ secrets.GEMINI_API }}
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_PAGE_ID: ${{ secrets.NOTION_PAGE_ID }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}

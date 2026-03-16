@@ -3,20 +3,23 @@ import asyncio
 import random
 import requests
 from datetime import datetime
-from google import genai
+from openai import OpenAI
 import edge_tts
 from pydub import AudioSegment
 from telegram import Bot
 from notion_client import Client
 
 # --- 설정 및 환경 변수 ---
-GEMINI_API_KEY = os.environ.get("GEMINI_API")
+PERPLEXITY_API_KEY = os.environ.get("PERPLEXITY_API_KEY")
 NOTION_TOKEN = os.environ.get("NOTION_TOKEN")
 NOTION_PAGE_ID = os.environ.get("NOTION_PAGE_ID")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+pplx_client = OpenAI(
+    api_key=PERPLEXITY_API_KEY,
+    base_url="https://api.perplexity.ai"
+)
 notion = Client(auth=NOTION_TOKEN)
 bot = Bot(token=TELEGRAM_TOKEN)
 
@@ -74,11 +77,11 @@ def generate_content():
     - 아주 친근하고 유머러스하게, 초등학생도 이해할 비유를 들어서 설명해줘.
     - 날씨에 맞는 옷차림 조언과 마지막에 브람스나 베토벤 같은 노동요 클래식 추천도 포함해줘.
     """
-    response = gemini_client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=prompt
+    response = pplx_client.chat.completions.create(
+        model="sonar",
+        messages=[{"role": "user", "content": prompt}]
     )
-    return response.text, ai_term, dev_term
+    return response.choices[0].message.content, ai_term, dev_term
 
 
 # 3. 오디오 생성 (Edge-TTS)
