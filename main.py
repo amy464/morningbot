@@ -1,11 +1,8 @@
 import os
 import asyncio
-import random
 import requests
 from datetime import datetime
 from openai import OpenAI
-import edge_tts
-from pydub import AudioSegment
 from telegram import Bot
 from notion_client import Client
 
@@ -23,128 +20,108 @@ pplx_client = OpenAI(
 notion = Client(auth=NOTION_TOKEN)
 bot = Bot(token=TELEGRAM_TOKEN)
 
-# --- 데이터 목록 ---
-AI_TERMS = [
-    "LLM", "Prompt", "Token", "RAG", "Vector DB", "Agent", "MCP", "Fine-tuning",
-    "Embedding", "Hallucination", "Transformer", "Attention", "GPT", "BERT", "Diffusion",
-    "Reinforcement Learning", "Zero-shot", "Few-shot", "Chain of Thought", "Multimodal",
-    "Tokenizer", "Context Window", "Temperature", "Top-p", "Inference",
-    "Training", "Overfitting", "Underfitting", "Benchmark", "RLHF",
-    "Instruction Tuning", "Quantization", "LoRA", "Distillation", "Perplexity",
-    "Semantic Search", "Cosine Similarity", "Neural Network", "Deep Learning", "Gradient Descent",
-    "Backpropagation", "Activation Function", "Batch Size", "Epoch", "Learning Rate",
-    "Dropout", "Normalization", "Softmax", "Cross-Entropy", "Autoregressive"
-]
-
-DEV_TERMS = [
-    "API", "REST", "JSON", "HTTP", "Backend", "Frontend", "Docker", "CI/CD", "Git", "Database",
-    "Webhook", "OAuth", "JWT", "HTTPS", "GraphQL", "gRPC", "WebSocket", "CDN", "DNS", "SSL",
-    "Kubernetes", "Microservice", "Monolith", "Cache", "Queue",
-    "Async", "Sync", "Thread", "Process", "Memory",
-    "SQL", "NoSQL", "Index", "Query", "Migration",
-    "Deployment", "Staging", "Production", "Rollback", "Blue-Green",
-    "Unit Test", "Integration Test", "TDD", "Code Review", "Refactoring",
-    "Repository", "Branch", "Merge", "Pull Request", "Commit"
-]
 
 
-# 1. 날씨 정보 가져오기 (인천)
-def get_weather():
-    try:
-        res = requests.get("https://wttr.in/Incheon?format=j1").json()
-        curr = res['current_condition'][0]
-        temp = res['weather'][0]
-        return f"현재 {curr['lang_ko'][0]['value']}, 기온 {curr['temp_C']}도 (최저 {temp['mintemp_C']} / 최고 {temp['maxtemp_C']})"
-    except:
-        return "날씨 정보를 가져올 수 없습니다."
+# 1. 브리프 생성 (Perplexity sonar - 웹 검색 내장)
+def generate_brief():
+    date_str = datetime.now().strftime("%Y년 %m월 %d일 %A")
 
+    prompt = f"""오늘 날짜: {date_str}
 
-# 2. 대본 및 내용 생성 (Gemini)
-def generate_content():
-    ai_term = random.choice(AI_TERMS)
-    dev_term = random.choice(DEV_TERMS)
-    weather = get_weather()
-    date_str = datetime.now().strftime("%Y년 %m월 %d일")
+아래 섹션 순서대로 모닝 브리프를 작성해줘. 웹 검색이 필요한 섹션은 반드시 최신 정보를 검색해서 작성해.
 
-    prompt = f"""
-    오늘 날짜: {date_str}
-    인천 날씨: {weather}
-    오늘의 AI 용어: {ai_term}
-    오늘의 개발 용어: {dev_term}
+### 📅 날짜 및 요일
+- 오늘 날짜와 요일을 한국어로 표시
+- 특별한 날(명절, 기념일 등)이 있으면 함께 표시
 
-    위 정보를 바탕으로 '인준(남성)'과 '선희(여성)'가 진행하는 5분 팟캐스트 대본을 써줘.
-    - [인준]과 [선희] 이름을 문장 앞에 붙일 것.
-    - 아주 친근하고 유머러스하게, 초등학생도 이해할 비유를 들어서 설명해줘.
-    - 날씨에 맞는 옷차림 조언과 마지막에 브람스나 베토벤 같은 노동요 클래식 추천도 포함해줘.
-    """
+### 🌤️ 오늘의 날씨 (인천)
+- 인천 날씨: 최저/최고 기온, 날씨 상태
+- 간단한 옷차림 조언 또는 우산 필요 여부
+
+### 🌍 국제사회 핫뉴스 (1~2개)
+- 오늘 기준 가장 주목받는 뉴스 1~2개
+- 헤드라인, 핵심 요약(2~3문장), 향후 영향, 출처 링크
+
+### 🇰🇷 오늘의 한국 뉴스 (1~2개)
+- 경제/사회적으로 가장 주목해야 하는 뉴스 1~2개
+- 헤드라인, 핵심 요약(2~3문장), 실생활 영향, 출처 링크
+
+### 🤖 AI 뉴스 (2~3개)
+- 최신 AI 관련 뉴스 2~3개
+- 비전문가도 이해할 수 있게 쉽게 설명
+- 제목, 중요한 이유, 실무 영향
+
+### 🔄 메인 AI 툴 업데이트
+- ChatGPT, Gemini, Claude, Perplexity, Grok, Kimi 각각의 최신 버전/변경사항 정리
+- 변경 없으면 "최근 변경 없음"으로 표기
+
+### 🛠️ AI 툴 데일리 업데이트
+- 어제 소셜에서 화제였던 실제 프롬프트 1~2개 (원문 + 한국어 번역)
+- 비주류 신서비스 2~3개 (이게 뭔지 / 써볼 기능 / 퀵스타트)
+
+### 💻 바이브코딩 지식 (1개)
+- AI 활용 개발 핵심 용어 중 1개 선정해서 설명
+- 한 줄 요약, 실생활 비유, 왜 주목받는지, 활용 시나리오
+
+### 🎬 AI 유튜브 추천 (1개)
+- 최근 화제의 AI 관련 한국어 유튜브 영상 1개
+- 제목, 채널명, 소개, 추천 이유, URL
+
+### 📚 오늘의 10분 학습 – 개발/코딩 용어 (1개)
+- 개발/코딩 필수 용어 중 1개 선정해서 설명
+- 한 줄 요약, 실생활 비유, 사용 사례 2~3개, 비개발자가 알면 좋은 이유
+
+### 📊 마케팅 트렌드 (2개)
+- 글로벌 트렌드 1개, 일본 트렌드 1개
+- 각각 설명과 실무 활용 팁
+
+### 🎵 오늘의 노동요 – 클래식 추천 (1개)
+- 베토벤, 브람스 등 집중력 높여주는 클래식 1곡
+- 곡명, 연주 추천, 분위기, 어울리는 업무 상황, YouTube 검색 키워드
+"""
+
     response = pplx_client.chat.completions.create(
         model="sonar",
         messages=[{"role": "user", "content": prompt}]
     )
-    return response.choices[0].message.content, ai_term, dev_term
+    return response.choices[0].message.content
 
 
-# 3. 오디오 생성 (Edge-TTS)
-async def create_audio(script_text):
-    lines = script_text.split('\n')
-    parts = []
-
-    for i, line in enumerate(lines):
-        if not line.strip():
-            continue
-
-        if "[인준]" in line:
-            voice = "ko-KR-InJoonNeural"
-            text = line.replace("[인준]", "").strip()
-        elif "[선희]" in line:
-            voice = "ko-KR-SunHiNeural"
-            text = line.replace("[선희]", "").strip()
-        else:
-            continue
-
-        file_path = f"part_{i}.mp3"
-        communicate = edge_tts.Communicate(text, voice)
-        await communicate.save(file_path)
-        parts.append(AudioSegment.from_mp3(file_path))
-
-    # 오디오 합치기
-    combined = sum(parts)
-    combined.export("morning_brief.mp3", format="mp3")
-
-    # 임시 파일 삭제
-    for i in range(len(lines)):
-        if os.path.exists(f"part_{i}.mp3"):
-            os.remove(f"part_{i}.mp3")
+# 2. 텔레그램 전송 (4096자 제한으로 분할)
+async def send_telegram(text):
+    MAX_LEN = 4000
+    chunks = [text[i:i+MAX_LEN] for i in range(0, len(text), MAX_LEN)]
+    for chunk in chunks:
+        await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=chunk)
 
 
-# 4. 노션 및 텔레그램 전송
-async def main():
-    print("🚀 브리핑 생성 시작...")
-    script, ai_t, dev_t = generate_content()
-    await create_audio(script)
-
-    # 1. 텔레그램 전송
-    await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=f"📅 오늘의 브리핑: {ai_t} & {dev_t}")
-    with open("morning_brief.mp3", "rb") as audio:
-        await bot.send_audio(chat_id=TELEGRAM_CHAT_ID, audio=audio)
-
-    # 2. 노션 데이터베이스에 업로드
+# 3. 노션 업로드
+def upload_notion(brief):
+    date_str = datetime.now().strftime("%b %d")
     try:
         notion.pages.create(
             parent={"database_id": NOTION_PAGE_ID},
             properties={
-                "Name": {"title": [{"text": {"content": f"☀️ Morning Brief - {datetime.now().strftime('%b %d')}"}}]},
-                "TL;DR": {"rich_text": [{"text": {"content": f"오늘의 AI: {ai_t} / 개발: {dev_t}"}}]}
+                "Name": {"title": [{"text": {"content": f"☀️ Morning Brief - {date_str}"}}]}
             },
             children=[
-                {"object": "block", "type": "heading_2", "heading_2": {"rich_text": [{"text": {"content": "🎙️ 오늘의 팟캐스트 대본"}}]}},
-                {"object": "block", "type": "paragraph", "paragraph": {"rich_text": [{"text": {"content": script}}]}}
+                {"object": "block", "type": "paragraph", "paragraph": {"rich_text": [{"text": {"content": brief[:2000]}}]}}
             ]
         )
         print("✅ 노션 업로드 완료!")
     except Exception as e:
-        print(f"❌ 노션 에러 발생: {e} (연결 추가를 확인하세요!)")
+        print(f"❌ 노션 에러: {e}")
 
+
+async def main():
+    print("🚀 브리핑 생성 시작...")
+    brief = generate_brief()
+    print("✅ 브리프 생성 완료")
+
+    await send_telegram(brief)
+    print("✅ 텔레그램 전송 완료")
+
+    upload_notion(brief)
     print("✅ 모든 전송 완료!")
 
 
